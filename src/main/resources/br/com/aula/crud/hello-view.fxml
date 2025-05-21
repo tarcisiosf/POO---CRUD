@@ -1,0 +1,73 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<?import javafx.geometry.Insets?>
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+
+<BorderPane xmlns:fx="http://javafx.com/fxml"
+            fx:controller="br.com.aula.crud.Principal"
+            prefWidth="800" prefHeight="600">
+    <!-- formulário de cadastro/edição -->
+    <top>
+        <GridPane hgap="10" vgap="10">
+            <padding>
+                <Insets top="10" right="10" bottom="10" left="10"/>
+            </padding>
+
+            <Label text="Nome:"      GridPane.rowIndex="0" GridPane.columnIndex="0"/>
+            <TextField fx:id="tfNome"
+                       GridPane.rowIndex="0" GridPane.columnIndex="1"/>
+
+            <Label text="Adulto?"    GridPane.rowIndex="0" GridPane.columnIndex="2"/>
+            <CheckBox fx:id="cbMaior"
+                      GridPane.rowIndex="0" GridPane.columnIndex="3"/>
+
+            <Label text="Curso:"     GridPane.rowIndex="1" GridPane.columnIndex="0"/>
+            <ChoiceBox fx:id="chbCurso"
+                       GridPane.rowIndex="1" GridPane.columnIndex="1"/>
+
+            <Label text="Sexo:"      GridPane.rowIndex="1" GridPane.columnIndex="2"/>
+            <ChoiceBox fx:id="chbSexo"
+                       GridPane.rowIndex="1" GridPane.columnIndex="3"/>
+
+            <HBox spacing="10" alignment="CENTER_RIGHT"
+                  GridPane.rowIndex="2" GridPane.columnIndex="0" GridPane.columnSpan="4">
+                <Button text="Novo"   onAction="#onNovo"/>
+                <Button text="Salvar" onAction="#onSalvar"/>
+                <Button text="Excluir" onAction="#onExcluir"/>
+            </HBox>
+        </GridPane>
+    </top>
+
+    <!-- barra de filtros e busca -->
+    <bottom>
+        <HBox spacing="10" alignment="CENTER_LEFT">
+            <padding>
+                <Insets top="10" right="10" bottom="10" left="10"/>
+            </padding>
+            <Label text="Filtrar Curso:"/>
+            <ChoiceBox fx:id="chbFiltroCurso"/>
+            <Button text="Filtrar" onAction="#onFiltrarPorCurso"/>
+
+            <Region HBox.hgrow="ALWAYS"/>
+
+            <Label text="Buscar Matrícula:"/>
+            <TextField fx:id="tfFiltroMatricula" prefWidth="80"/>
+            <Button text="Buscar" onAction="#onBuscarPorMatricula"/>
+            <Button text="Limpar Filtros" onAction="#onLimparFiltros"/>
+        </HBox>
+    </bottom>
+
+
+    <!-- tabela de exibição -->
+    <center>
+        <TableView fx:id="tvAlunos">
+            <columns>
+                <TableColumn fx:id="colMatricula" text="Matrícula" prefWidth="100"/>
+                <TableColumn fx:id="colNome"      text="Nome"      prefWidth="200"/>
+                <TableColumn fx:id="colMaior"     text="Adulto?"   prefWidth="80"/>
+                <TableColumn fx:id="colCurso"     text="Curso"     prefWidth="150"/>
+                <TableColumn fx:id="colSexo"      text="Sexo"      prefWidth="80"/>
+            </columns>
+        </TableView>
+    </center>
+</BorderPane>
