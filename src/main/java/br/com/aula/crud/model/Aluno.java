@@ -1,22 +1,34 @@
 package br.com.aula.crud.model;
 
-public class Aluno {
-    private String nome;
-    private Long matricula;
-    boolean maioridade;
-    Cursos curso;
-    String sexo;
+import java.time.LocalDate;
 
-    public Aluno(Long matricula ,String nome, boolean maioridade, Cursos curso, String sexo) {
-        this.nome = nome;
-        this.matricula = matricula;
-        this.maioridade = maioridade;
-        this.curso = curso;
-        this.sexo = sexo;
+
+public class Aluno {
+
+    private Long    matricula;
+    private String  nome;
+    private boolean maioridade;
+    private Curso   curso;
+    private String  sexo;
+    private LocalDate dataNascimento;
+
+    public Aluno() { }
+
+    public Aluno(Long matricula, String nome, boolean maioridade, Curso curso, String sexo) {
+        this.matricula   = matricula;
+        this.nome        = nome;
+        this.maioridade  = maioridade;
+        this.curso       = curso;
+        this.sexo        = sexo;
     }
 
-    public Aluno() {
 
+    public Long getMatricula() {
+        return matricula;
+    }
+
+    public void setMatricula(Long matricula) {
+        this.matricula = matricula;
     }
 
     public String getNome() {
@@ -27,14 +39,6 @@ public class Aluno {
         this.nome = nome;
     }
 
-    public Long getMatricula() {
-        return matricula;
-    }
-
-    public void setMatricula(Long matricula) {
-        this.matricula = matricula;
-    }
-
     public boolean isMaioridade() {
         return maioridade;
     }
@@ -43,11 +47,11 @@ public class Aluno {
         this.maioridade = maioridade;
     }
 
-    public Cursos getCurso() {
+    public Curso getCurso() {
         return curso;
     }
 
-    public void setCurso(Cursos curso) {
+    public void setCurso(Curso curso) {
         this.curso = curso;
     }
 
@@ -58,5 +62,18 @@ public class Aluno {
     public void setSexo(String sexo) {
         this.sexo = sexo;
     }
-}
 
+    public LocalDate getDataNascimento() {
+        return dataNascimento;
+    }
+
+    public void setDataNascimento(LocalDate dataNascimento) {
+        this.dataNascimento = dataNascimento;
+    }
+
+    @Override
+    public String toString() {
+        return String.format("%d: %s – %s (%s)",
+                matricula, nome, curso.getSigla(), sexo);
+    }
+}

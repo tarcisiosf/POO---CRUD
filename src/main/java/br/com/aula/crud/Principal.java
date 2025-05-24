@@ -1,8 +1,9 @@
 package br.com.aula.crud;
 
 import br.com.aula.crud.dao.AlunoDAO;
+import br.com.aula.crud.dao.CursoDAO;
 import br.com.aula.crud.model.Aluno;
-import br.com.aula.crud.model.Cursos;
+import br.com.aula.crud.model.Curso;
 import javafx.application.Application;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
@@ -21,21 +22,23 @@ public class Principal extends Application {
 
     @FXML private TextField tfNome;
     @FXML private CheckBox cbMaior;
-    @FXML private ChoiceBox<Cursos> chbCurso;
+    @FXML private ChoiceBox<Curso> chbCurso;
     @FXML private ChoiceBox<String> chbSexo;
+
     @FXML private TableView<Aluno> tvAlunos;
     @FXML private TableColumn<Aluno, Long>   colMatricula;
     @FXML private TableColumn<Aluno, String> colNome;
-    @FXML private TableColumn<Aluno, Boolean> colMaior;
-    @FXML private TableColumn<Aluno, Cursos>  colCurso;
-    @FXML private TableColumn<Aluno, String>  colSexo;
+    @FXML private TableColumn<Aluno, Boolean>colMaior;
+    @FXML private TableColumn<Aluno, Curso>  colCurso;   // agora Curso
+    @FXML private TableColumn<Aluno, String> colSexo;
 
-    @FXML private ChoiceBox<Cursos> chbFiltroCurso;
-    @FXML private TextField tfFiltroMatricula;
+    @FXML private ChoiceBox<Curso> chbFiltroCurso;
+    @FXML private TextField      tfFiltroMatricula;
 
-    private final AlunoDAO alunoDAO = new AlunoDAO();
+    private final AlunoDAO alunoDAO   = new AlunoDAO();
+    private final CursoDAO cursoDAO   = new CursoDAO();  // para carregar cursos
     private ObservableList<Aluno> listaAlunos;
-
+    private ObservableList<Curso> listaCursos;
 
     public static void main(String[] args) {
         launch();
@@ -46,34 +49,34 @@ public class Principal extends Application {
         FXMLLoader loader = new FXMLLoader(
                 getClass().getResource("/br/com/aula/crud/hello-view.fxml")
         );
-        loader.setControllerFactory(type -> this);
-
+        loader.setControllerFactory(t -> this);
         Scene scene = new Scene(loader.load(), 800, 600);
-
         stage.setTitle("CRUD de Alunos");
         stage.setScene(scene);
         stage.show();
     }
 
-
     @FXML
     public void initialize() {
-        chbCurso.setItems(FXCollections.observableArrayList(Cursos.values()));
+        List<Curso> cursos = cursoDAO.findAll();
+        listaCursos = FXCollections.observableArrayList(cursos);
+
+        chbCurso.setItems(listaCursos);
+        chbFiltroCurso.setItems(listaCursos);
+
         chbSexo.setItems(FXCollections.observableArrayList("masculino", "feminino"));
 
-        chbFiltroCurso.setItems(FXCollections.observableArrayList(Cursos.values()));
-
         colMatricula.setCellValueFactory(new PropertyValueFactory<>("matricula"));
-        colNome.setCellValueFactory(new PropertyValueFactory<>("nome"));
-        colMaior.setCellValueFactory(new PropertyValueFactory<>("maioridade"));
-        colCurso.setCellValueFactory(new PropertyValueFactory<>("curso"));
-        colSexo.setCellValueFactory(new PropertyValueFactory<>("sexo"));
+        colNome     .setCellValueFactory(new PropertyValueFactory<>("nome"));
+        colMaior    .setCellValueFactory(new PropertyValueFactory<>("maioridade"));
+        colCurso    .setCellValueFactory(new PropertyValueFactory<>("curso"));
+        colSexo     .setCellValueFactory(new PropertyValueFactory<>("sexo"));
 
         carregarAlunos();
 
         tvAlunos.getSelectionModel()
                 .selectedItemProperty()
-                .addListener((obs, oldSel, novoSel) -> preencherFormulario(novoSel));
+                .addListener((obs, oldA, novoA) -> preencherFormulario(novoA));
     }
 
     private void carregarAlunos() {
@@ -113,7 +116,7 @@ public class Principal extends Application {
 
         a.setNome(tfNome.getText().trim());
         a.setMaioridade(cbMaior.isSelected());
-        a.setCurso(chbCurso.getValue());
+        a.setCurso(chbCurso.getValue());  // agora Curso
         a.setSexo(chbSexo.getValue());
 
         if (isNovo) {
@@ -123,7 +126,6 @@ public class Principal extends Application {
             alunoDAO.update(a);
             tvAlunos.refresh();
         }
-
         onNovo();
     }
 
@@ -139,12 +141,11 @@ public class Principal extends Application {
 
     @FXML
     private void onFiltrarPorCurso() {
-        Cursos cursoSel = chbFiltroCurso.getValue();
-        if (cursoSel == null) {
+        Curso sel = chbFiltroCurso.getValue();
+        if (sel == null) {
             carregarAlunos();
         } else {
-            List<Aluno> filtrados = alunoDAO.findByCurso(cursoSel);
-            listaAlunos.setAll(filtrados);
+            listaAlunos.setAll(alunoDAO.findByCurso(sel));
         }
         onNovo();
     }
@@ -162,7 +163,7 @@ public class Principal extends Application {
                 opt.ifPresent(listaAlunos::add);
             } catch (NumberFormatException e) {
                 new Alert(Alert.AlertType.WARNING,
-                        "Número de matrícula inválido!", ButtonType.OK).showAndWait();
+                        "Matrícula inválida!", ButtonType.OK).showAndWait();
             }
         }
         onNovo();
@@ -176,6 +177,7 @@ public class Principal extends Application {
         onNovo();
     }
 }
+
 
 
 

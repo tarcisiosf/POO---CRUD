@@ -2,8 +2,7 @@ package br.com.aula.crud.dao;
 
 import br.com.aula.crud.config.ConnectionFactory;
 import br.com.aula.crud.model.Aluno;
-import br.com.aula.crud.model.Cursos;
-
+import br.com.aula.crud.model.Curso;
 
 import java.sql.*;
 import java.util.ArrayList;
@@ -11,109 +10,146 @@ import java.util.List;
 import java.util.Optional;
 
 public class AlunoDAO implements IAlunoDAO {
+
+    private final ConnectionFactory factory = new ConnectionFactory();
+    private final CursoDAO cursoDAO    = new CursoDAO();
+
     @Override
     public Aluno create(Aluno aluno) {
-        try (Connection connection = ConnectionFactory.getConnection();) {
-            String query = "INSERT INTO alunos (nome, maioridade, curso, sexo) VALUES (?, ?, ?, ? )";
-            PreparedStatement statement = connection.prepareStatement(query, Statement.RETURN_GENERATED_KEYS);
-            statement.setString(1, aluno.getNome());
-            statement.setBoolean(2, aluno.isMaioridade());
-            statement.setString(3, aluno.getCurso().toString());
-            statement.setString(4, aluno.getSexo());
-            statement.executeUpdate();
+        String sql = "INSERT INTO alunos (nome, maioridade, curso_codigo, sexo) VALUES (?, ?, ?, ?)";
+        try (Connection conn = factory.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)) {
 
-            ResultSet resultSet = statement.getGeneratedKeys();
-            resultSet.next();
-            Long matricula = resultSet.getLong(1);
-            aluno.setMatricula(matricula);
+            ps.setString(1, aluno.getNome());
+            ps.setBoolean(2, aluno.isMaioridade());
+            ps.setLong(3, aluno.getCurso().getCodigo());
+            ps.setString(4, aluno.getSexo());
+            ps.executeUpdate();
+
+            try (ResultSet rs = ps.getGeneratedKeys()) {
+                if (rs.next()) {
+                    aluno.setMatricula(rs.getLong(1));
+                }
+            }
+            return aluno;
         } catch (SQLException e) {
-            throw new RuntimeException(e);
+            throw new RuntimeException("Erro ao criar aluno", e);
         }
-        return aluno;
     }
 
     @Override
-    public Aluno update(Aluno aluno) {
-        return null;
+    public void update(Aluno aluno) {
+        String sql = "UPDATE alunos SET nome = ?, maioridade = ?, curso_codigo = ?, sexo = ? WHERE matricula = ?";
+        try (Connection conn = factory.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+
+            ps.setString(1, aluno.getNome());
+            ps.setBoolean(2, aluno.isMaioridade());
+            ps.setLong(3, aluno.getCurso().getCodigo());
+            ps.setString(4, aluno.getSexo());
+            ps.setLong(5, aluno.getMatricula());
+            ps.executeUpdate();
+        } catch (SQLException e) {
+            throw new RuntimeException("Erro ao atualizar aluno", e);
+        }
     }
 
     @Override
     public void delete(Long matricula) {
+        String sql = "DELETE FROM alunos WHERE matricula = ?";
+        try (Connection conn = factory.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
 
+            ps.setLong(1, matricula);
+            ps.executeUpdate();
+        } catch (SQLException e) {
+            throw new RuntimeException("Erro ao excluir aluno", e);
+        }
     }
 
     @Override
     public List<Aluno> findAll() {
-        String query = "SELECT * FROM alunos";
+        String sql = "SELECT matricula, nome, maioridade, curso_codigo, sexo FROM alunos ORDER BY matricula";
         List<Aluno> lista = new ArrayList<>();
-        try (Connection connection = ConnectionFactory.getConnection()) {
-            PreparedStatement statement = connection.prepareStatement(query);
-            statement.executeQuery();
-            ResultSet rs = statement.executeQuery();
+        try (Connection conn = factory.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql);
+             ResultSet rs = ps.executeQuery()) {
+
             while (rs.next()) {
-                Aluno aluno = new Aluno();
-                aluno.setMatricula(rs.getLong("matricula"));
-                aluno.setNome(rs.getString("nome"));
-                aluno.setMaioridade(rs.getBoolean("maioridade"));
-                aluno.setCurso(Cursos.valueOf(rs.getString("curso")));
-                aluno.setSexo(rs.getString("sexo"));
-                lista.add(aluno);
+                lista.add(mapRow(rs));
             }
+            return lista;
         } catch (SQLException e) {
-            throw new RuntimeException(e);
+            throw new RuntimeException("Erro ao listar alunos", e);
         }
-        return lista;
     }
 
     @Override
     public Optional<Aluno> findById(Long matricula) {
-        String query = "SELECT * FROM alunos WHERE matricula = ?";
-        Aluno aluno;
-        try (Connection connection = ConnectionFactory.getConnection()) {
-            PreparedStatement statement = connection.prepareStatement(query);
-            statement.setLong(1, matricula);
-            statement.executeQuery();
-            ResultSet rs = statement.executeQuery();
-            rs.next();
-            aluno = new Aluno(
-                    rs.getLong("matricula"),
-                    rs.getString("nome"),
-                    rs.getBoolean("maioridade"),
-                    Cursos.valueOf(rs.getString("curso")),
-                    rs.getString("sexo")
-            );
+        String sql = "SELECT matricula, nome, maioridade, curso_codigo, sexo FROM alunos WHERE matricula = ?";
+        try (Connection conn = factory.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+
+            ps.setLong(1, matricula);
+            try (ResultSet rs = ps.executeQuery()) {
+                if (rs.next()) {
+                    return Optional.of(mapRow(rs));
+                }
+                return Optional.empty();
+            }
         } catch (SQLException e) {
-            throw new RuntimeException(e);
+            throw new RuntimeException("Erro ao buscar aluno por ID", e);
         }
-        return Optional.ofNullable(aluno);
     }
 
     @Override
-    public List<Aluno> findByCurso(Cursos curso) {
-        String query = "SELECT * FROM alunos WHERE curso = ?";
+    public List<Aluno> findByCurso(Curso curso) {
+        String sql = "SELECT matricula, nome, maioridade, curso_codigo, sexo FROM alunos WHERE curso_codigo = ? ORDER BY nome";
         List<Aluno> lista = new ArrayList<>();
-        try (Connection connection = ConnectionFactory.getConnection();
-             PreparedStatement statement = connection.prepareStatement(query)) {
+        try (Connection conn = factory.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
 
-            // Define o parâmetro do filtro
-            statement.setString(1, curso.toString());
-
-            // Executa a consulta
-            try (ResultSet rs = statement.executeQuery()) {
+            ps.setLong(1, curso.getCodigo());
+            try (ResultSet rs = ps.executeQuery()) {
                 while (rs.next()) {
-                    Aluno aluno = new Aluno();
-                    aluno.setMatricula(rs.getLong("matricula"));
-                    aluno.setNome(rs.getString("nome"));
-                    aluno.setMaioridade(rs.getBoolean("maioridade"));
-                    aluno.setCurso(Cursos.valueOf(rs.getString("curso")));
-                    aluno.setSexo(rs.getString("sexo"));
-                    lista.add(aluno);
+                    lista.add(mapRow(rs));
                 }
             }
-
+            return lista;
         } catch (SQLException e) {
-            throw new RuntimeException("Erro ao buscar alunos por curso: " + curso, e);
+            throw new RuntimeException("Erro ao buscar alunos por curso", e);
         }
-        return lista;
+    }
+
+    @Override
+    public List<Aluno> findBySexo(String sexo) {
+        String sql = "SELECT matricula, nome, maioridade, curso_codigo, sexo FROM alunos WHERE sexo = ? ORDER BY nome";
+        List<Aluno> lista = new ArrayList<>();
+        try (Connection conn = factory.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+
+            ps.setString(1, sexo);
+            try (ResultSet rs = ps.executeQuery()) {
+                while (rs.next()) {
+                    lista.add(mapRow(rs));
+                }
+            }
+            return lista;
+        } catch (SQLException e) {
+            throw new RuntimeException("Erro ao buscar alunos por sexo", e);
+        }
+    }
+
+    private Aluno mapRow(ResultSet rs) throws SQLException {
+        Long matricula      = rs.getLong("matricula");
+        String nome         = rs.getString("nome");
+        boolean maioridade  = rs.getBoolean("maioridade");
+        Long cursoCodigo    = rs.getLong("curso_codigo");
+        Curso curso         = cursoDAO.findById(cursoCodigo)
+                .orElseThrow(() ->
+                        new RuntimeException("Curso não encontrado (código): " + cursoCodigo));
+        String sexo         = rs.getString("sexo");
+
+        return new Aluno(matricula, nome, maioridade, curso, sexo);
     }
 }

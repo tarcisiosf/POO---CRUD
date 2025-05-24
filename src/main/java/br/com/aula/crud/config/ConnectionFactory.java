@@ -10,7 +10,7 @@ public class ConnectionFactory {
     private static final String USER = "postgres";
     private static final String PASSWORD = "lamborguini129";
 
-    private ConnectionFactory() { }
+    public ConnectionFactory() { }
 
     public static Connection getConnection() {
         try {
